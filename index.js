@@ -3,13 +3,12 @@ const axios = require('axios');
 const app = express();
 app.use(express.json());
 
-// 👇 Tu rempliras ces valeurs à l'étape 4
 const SOUNDCLOUD_TOKEN = process.env.SOUNDCLOUD_TOKEN;
 const SOUNDCLOUD_CLIENT_ID = process.env.SOUNDCLOUD_CLIENT_ID;
 const PLAYLIST_ID = process.env.PLAYLIST_ID;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+const INSTAGRAM_TOKEN = process.env.INSTAGRAM_TOKEN;
 
-// Vérification du webhook Meta
 app.get('/webhook', (req, res) => {
   if (req.query['hub.verify_token'] === VERIFY_TOKEN) {
     res.send(req.query['hub.challenge']);
@@ -18,18 +17,22 @@ app.get('/webhook', (req, res) => {
   }
 });
 
-// Réception des messages Instagram
 app.post('/webhook', async (req, res) => {
-  const messages = req.body?.entry?.[0]?.messaging;
-  if (!messages) return res.sendStatus(200);
+  try {
+    const entry = req.body?.entry?.[0];
+    const messaging = entry?.messaging || entry?.changes?.[0]?.value?.messages;
+    if (!messaging) return res.sendStatus(200);
 
-  for (const event of messages) {
-    const text = event?.message?.text || '';
-    const scUrl = extractSoundCloudUrl(text);
-    if (scUrl) {
-      console.log('🎵 Lien détecté :', scUrl);
-      await addToPlaylist(scUrl);
+    for (const event of messaging) {
+      const text = event?.message?.text || event?.text?.body || '';
+      const scUrl = extractSoundCloudUrl(text);
+      if (scUrl) {
+        console.log('🎵 Lien détecté :', scUrl);
+        await addToPlaylist(scUrl);
+      }
     }
+  } catch (err) {
+    console.error('Erreur webhook:', err.message);
   }
   res.sendStatus(200);
 });
@@ -60,7 +63,7 @@ async function addToPlaylist(url) {
     );
     console.log('✅ Track ajouté avec succès !');
   } catch (err) {
-    console.error('❌ Erreur :', err.message);
+    console.error('❌ Erreur SoundCloud:', err.message);
   }
 }
 
