@@ -1,5 +1,6 @@
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
 const app = express();
 app.use(express.json());
 
@@ -8,6 +9,10 @@ const SOUNDCLOUD_CLIENT_ID = process.env.SOUNDCLOUD_CLIENT_ID;
 const PLAYLIST_ID = process.env.PLAYLIST_ID;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 const INSTAGRAM_TOKEN = process.env.INSTAGRAM_TOKEN;
+
+app.get('/privacy', (req, res) => {
+  res.sendFile(path.join(__dirname, 'privacy.html'));
+});
 
 app.get('/webhook', (req, res) => {
   if (req.query['hub.verify_token'] === VERIFY_TOKEN) {
